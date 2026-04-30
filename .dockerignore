@@ -1,0 +1,17 @@
+**/.git
+**/.gitignore
+**/.vscode
+**/bin
+**/obj
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/node_modules
+**/npm-debug.log
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+**/.env
+**/README.md
+**/LICENSE
+**/.vs

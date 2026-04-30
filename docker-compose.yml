@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  taskapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskapi
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/taskflow.db
+    volumes:
+      - taskapi-data:/app/data
+    networks:
+      - taskapi-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      taskapi:
+        condition: service_healthy
+    networks:
+      - taskapi-network
+    restart: unless-stopped
+
+volumes:
+  taskapi-data:
+    driver: local
+
+networks:
+  taskapi-network:
+    driver: bridge

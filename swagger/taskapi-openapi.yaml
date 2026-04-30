@@ -1,0 +1,475 @@
+openapi: 3.0.3
+info:
+  title: Task API
+  version: 1.0.0
+  description: |
+    RESTful API for managing tasks in the TaskFlow application.
+    Provides CRUD operations for task management with SQLite persistence.
+  contact:
+    name: TaskFlow API Support
+    email: support@taskflow.com
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+  - url: http://localhost:8080
+    description: Docker containerized server
+  - url: https://api-dev.taskflow.com
+    description: Development environment
+  - url: https://api-staging.taskflow.com
+    description: Staging environment
+  - url: https://api.taskflow.com
+    description: Production environment
+
+tags:
+  - name: Tasks
+    description: Task management operations
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /api/tasks:
+    get:
+      tags:
+        - Tasks
+      summary: Get all tasks
+      description: Retrieves all tasks with optional status filtering
+      operationId: getTasks
+      parameters:
+        - name: status
+          in: query
+          description: Filter tasks by completion status
+          required: false
+          schema:
+            type: string
+            enum: [all, active, completed]
+            default: all
+          example: all
+      responses:
+        '200':
+          description: Successfully retrieved tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskResponse'
+              examples:
+                allTasks:
+                  summary: All tasks
+                  value:
+                    - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                      title: Complete project documentation
+                      description: Write comprehensive documentation for the TaskFlow application
+                      isCompleted: false
+                      createdAt: 2024-01-15T10:30:00Z
+                    - id: 7cb92a18-8934-4823-a1d2-5f847e99bca3
+                      title: Review pull requests
+                      description: Review and merge pending PRs
+                      isCompleted: true
+                      createdAt: 2024-01-14T09:15:00Z
+                emptyList:
+                  summary: No tasks found
+                  value: []
+        '400':
+          description: Invalid status parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                errorCode: VALIDATION_ERROR
+                message: "Invalid status filter: invalid. Valid values are: all, active, completed"
+                timestamp: 2024-01-15T10:30:00Z
+                traceId: 00-1234567890abcdef-fedcba0987654321-00
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Tasks
+      summary: Create a new task
+      description: Creates a new task with the provided details
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTask'
+            examples:
+              withDescription:
+                summary: Task with description
+                value:
+                  title: Complete project documentation
+                  description: Write comprehensive documentation for the TaskFlow application
+              withoutDescription:
+                summary: Task without description
+                value:
+                  title: Review pull requests
+      responses:
+        '201':
+          description: Task created successfully
+          headers:
+            Location:
+              description: URI of the created task
+              schema:
+                type: string
+              example: /api/tasks/3fa85f64-5717-4562-b3fc-2c963f66afa6
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+              example:
+                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                title: Complete project documentation
+                description: Write comprehensive documentation for the TaskFlow application
+                isCompleted: false
+                createdAt: 2024-01-15T10:30:00Z
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                errorCode: VALIDATION_ERROR
+                message: Validation failed
+                timestamp: 2024-01-15T10:30:00Z
+                traceId: 00-1234567890abcdef-fedcba0987654321-00
+                validationErrors:
+                  Title:
+                    - Title is required
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks/{id}:
+    get:
+      tags:
+        - Tasks
+      summary: Get task by ID
+      description: Retrieves a specific task by its unique identifier
+      operationId: getTaskById
+      parameters:
+        - name: id
+          in: path
+          description: Task unique identifier
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      responses:
+        '200':
+          description: Task found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+              example:
+                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                title: Complete project documentation
+                description: Write comprehensive documentation for the TaskFlow application
+                isCompleted: false
+                createdAt: 2024-01-15T10:30:00Z
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                errorCode: NOT_FOUND
+                message: Task with ID 3fa85f64-5717-4562-b3fc-2c963f66afa6 not found
+                timestamp: 2024-01-15T10:30:00Z
+                traceId: 00-1234567890abcdef-fedcba0987654321-00
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Tasks
+      summary: Update a task
+      description: Updates an existing task with new details
+      operationId: updateTask
+      parameters:
+        - name: id
+          in: path
+          description: Task unique identifier
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTask'
+            examples:
+              updateAll:
+                summary: Update all fields
+                value:
+                  title: Complete project documentation - Updated
+                  description: Write comprehensive documentation including API specs
+                  isCompleted: true
+              markCompleted:
+                summary: Mark as completed
+                value:
+                  title: Review pull requests
+                  description: Review and merge pending PRs
+                  isCompleted: true
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+              example:
+                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                title: Complete project documentation - Updated
+                description: Write comprehensive documentation including API specs
+                isCompleted: true
+                createdAt: 2024-01-15T10:30:00Z
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                errorCode: NOT_FOUND
+                message: Task with ID 3fa85f64-5717-4562-b3fc-2c963f66afa6 not found
+                timestamp: 2024-01-15T10:30:00Z
+                traceId: 00-1234567890abcdef-fedcba0987654321-00
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Tasks
+      summary: Delete a task
+      description: Deletes a task by its unique identifier
+      operationId: deleteTask
+      parameters:
+        - name: id
+          in: path
+          description: Task unique identifier
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      responses:
+        '204':
+          description: Task deleted successfully
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                errorCode: NOT_FOUND
+                message: Task with ID 3fa85f64-5717-4562-b3fc-2c963f66afa6 not found
+                timestamp: 2024-01-15T10:30:00Z
+                traceId: 00-1234567890abcdef-fedcba0987654321-00
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health/live:
+    get:
+      tags:
+        - Health
+      summary: Liveness probe
+      description: Checks if the application is alive and running
+      operationId: getLiveness
+      responses:
+        '200':
+          description: Application is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Alive
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: 2024-01-15T10:30:00Z
+
+  /health/ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness probe
+      description: Checks if the application is ready to accept traffic
+      operationId: getReadiness
+      responses:
+        '200':
+          description: Application is ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Ready
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: 2024-01-15T10:30:00Z
+                  database:
+                    type: string
+                    example: Connected
+        '503':
+          description: Application is not ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: NotReady
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: 2024-01-15T10:30:00Z
+                  database:
+                    type: string
+                    example: Disconnected
+
+components:
+  schemas:
+    CreateTask:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Title of the task
+          example: Complete project documentation
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Optional detailed description
+          example: Write comprehensive documentation for the TaskFlow application
+
+    UpdateTask:
+      type: object
+      required:
+        - title
+        - isCompleted
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Updated title of the task
+          example: Complete project documentation - Updated
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Updated description
+          example: Write comprehensive documentation including API specs
+        isCompleted:
+          type: boolean
+          description: Completion status
+          example: true
+
+    TaskResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        title:
+          type: string
+          description: Task title
+          example: Complete project documentation
+        description:
+          type: string
+          nullable: true
+          description: Task description
+          example: Write comprehensive documentation for the TaskFlow application
+        isCompleted:
+          type: boolean
+          description: Completion status
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: 2024-01-15T10:30:00Z
+
+    ErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          description: Error code identifier
+          example: NOT_FOUND
+        message:
+          type: string
+          description: Human-readable error message
+          example: Task with ID 3fa85f64-5717-4562-b3fc-2c963f66afa6 not found
+        timestamp:
+          type: string
+          format: date-time
+          description: Error occurrence timestamp
+          example: 2024-01-15T10:30:00Z
+        traceId:
+          type: string
+          nullable: true
+          description: Correlation trace ID
+          example: 00-1234567890abcdef-fedcba0987654321-00
+        validationErrors:
+          type: object
+          nullable: true
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Validation error details
+          example:
+            Title:
+              - Title is required
