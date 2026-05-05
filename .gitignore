@@ -50,3 +50,7 @@ coverage/
 *.pidb
 *.svclog
 *.scc
+
+# Local environment secrets
+.env
+TaskApi/appsettings.Development.json
