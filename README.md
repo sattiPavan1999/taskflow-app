@@ -6,7 +6,7 @@ A full-stack task management application — a RESTful .NET 8 backend with a Rea
 
 **Backend**
 - C# / ASP.NET Core 8 Web API
-- SQLite with Entity Framework Core (migrations)
+- PostgreSQL with Entity Framework Core (migrations)
 - JWT Bearer authentication with BCrypt password hashing
 - xUnit + Moq for testing
 - Docker
@@ -45,8 +45,7 @@ task_api/
 │   ├── Middleware/             # GlobalExceptionMiddleware
 │   ├── Exceptions/             # NotFoundException, ValidationException
 │   ├── Settings/               # JwtSettings
-│   ├── Migrations/             # EF Core migrations
-│   └── taskflow.db             # SQLite file (auto-created on first run)
+│   └── Migrations/             # EF Core migrations
 ├── TaskApi.Tests/              # xUnit tests (36 tests)
 ├── frontend/                   # React app
 │   ├── src/
@@ -69,7 +68,18 @@ task_api/
 
 - .NET 8 SDK
 - Node.js 18+
-- Docker (optional)
+- PostgreSQL 16+ (for local dev without Docker)
+- Docker (optional — includes PostgreSQL)
+
+### Environment setup
+
+Copy `.env.example` to `.env` and fill in both values:
+
+```bash
+cp .env.example .env
+# JWT_SECRET_KEY — generate with: openssl rand -hex 32
+# POSTGRES_PASSWORD — your PostgreSQL password
+```
 
 ### Run the backend
 
@@ -79,7 +89,7 @@ dotnet run --project TaskApi/TaskApi.csproj --launch-profile http
 # Swagger UI at http://localhost:5255/swagger
 ```
 
-EF Core migrations are applied automatically on startup, creating `taskflow.db` if it doesn't exist.
+Requires PostgreSQL running on `localhost:5432` with a `taskflow` database. The default connection string uses `Username=postgres;Password=postgres` — override in `appsettings.Development.json` if your credentials differ. EF Core migrations are applied automatically on startup.
 
 ### Run the frontend
 
@@ -92,16 +102,17 @@ npm run dev
 
 The Vite dev server proxies `/api` and `/auth` to `http://localhost:5255`.
 
-### Docker (API + Frontend together)
+### Docker (PostgreSQL + API + Frontend together)
 
 ```bash
 docker-compose up -d
 # Frontend at http://localhost:3000
 # API at http://localhost:8080
+# PostgreSQL at localhost:5434 (host) / postgres:5432 (internal)
 # Health check: http://localhost:8080/health/ready
 ```
 
-Nginx (port 3000) proxies `/api/` and `/auth/` to the backend container.
+Requires a `.env` file with `JWT_SECRET_KEY` and `POSTGRES_PASSWORD`. The API waits for the PostgreSQL health check before starting. Nginx (port 3000) proxies `/api/` and `/auth/` to the backend container.
 
 ## API Endpoints
 
@@ -197,6 +208,13 @@ All errors use a consistent shape:
 
 ## Configuration
 
+### Environment variables (`.env`)
+
+| Variable | Description |
+|----------|-------------|
+| `JWT_SECRET_KEY` | HS256 signing key — minimum 32 characters |
+| `POSTGRES_PASSWORD` | Password for the `postgres` user |
+
 ### JWT (`appsettings.json`)
 
 ```json
@@ -207,6 +225,14 @@ All errors use a consistent shape:
   "ExpirationMinutes": 60
 }
 ```
+
+### Connection string (`appsettings.json`)
+
+```
+Host=localhost;Port=5432;Database=taskflow;Username=postgres;Password=postgres
+```
+
+Override in `appsettings.Development.json` for local credentials. Docker sets this via the `ConnectionStrings__DefaultConnection` environment variable.
 
 ### Production CORS
 

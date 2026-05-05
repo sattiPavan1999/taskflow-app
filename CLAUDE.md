@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend (ASP.NET Core)
 ```bash
-# Run the API on http://localhost:5255
+# Run the API on http://localhost:5255 (requires PostgreSQL on localhost:5432)
 dotnet run --project TaskApi/TaskApi.csproj --launch-profile http
 
 # Build
@@ -22,7 +22,7 @@ dotnet test --filter "FullyQualifiedName~TaskServiceTests.CreateTaskAsync_Create
 # Run tests with coverage
 dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 
-# Docker — starts both API (port 8080) and frontend (port 3000)
+# Docker — starts PostgreSQL (port 5434), API (port 8080), and frontend (port 3000)
 docker-compose up -d
 docker-compose up -d --build   # rebuild images
 ```
@@ -43,7 +43,7 @@ npm run test:run   # vitest single run (CI)
 
 ### Backend — `TaskApi/`
 
-Three-layer: **Controller → Service → Repository → EF Core → SQLite**
+Three-layer: **Controller → Service → Repository → EF Core → PostgreSQL**
 
 - **Controllers/** — HTTP only; no business logic; returns typed DTOs. All task endpoints require `[Authorize]`.
 - **Services/** — all business logic; validates `status` filter; throws `NotFoundException`/`ValidationException`
@@ -56,7 +56,11 @@ Three-layer: **Controller → Service → Repository → EF Core → SQLite**
 
 **Valid `status` filter values:** `all`, `active`, `completed`, `overdue`. The `overdue` filter is applied in-memory in the service (tasks where `IsCompleted=false` and `DueDate < UtcNow`).
 
-**Database:** SQLite file `TaskApi/taskflow.db`. EF Core migrations live in `TaskApi/Migrations/`. The app calls `Database.Migrate()` on startup to apply pending migrations automatically.
+**Database:** PostgreSQL (`taskflow` database). EF Core migrations live in `TaskApi/Migrations/`. The app calls `Database.Migrate()` on startup to apply pending migrations automatically.
+
+**Local dev connection string** (default in `appsettings.json`): `Host=localhost;Port=5432;Database=taskflow;Username=postgres;Password=postgres`. Override in `appsettings.Development.json` if your local credentials differ.
+
+**Docker** runs PostgreSQL as a service (`postgres:16-alpine`) with the host port mapped to **5434**. The API container connects via the internal service name `postgres:5432`. Both `JWT_SECRET_KEY` and `POSTGRES_PASSWORD` are read from `.env` (copy `.env.example` to get started).
 
 **Migration workflow:**
 ```bash
@@ -75,6 +79,8 @@ dotnet ef migrations remove --project TaskApi/TaskApi.csproj
 **CORS:** development allows all origins; production reads `AllowedOrigins[]` from `appsettings.json`.
 
 **Swagger UI:** available at `http://localhost:5255/swagger` in development only. An OpenAPI spec snapshot lives at `swagger/taskapi-openapi.yaml`.
+
+**Health endpoints:** `GET /health/live` (liveness — always 200) and `GET /health/ready` (readiness — checks DB connectivity, returns 503 if unreachable). Docker uses `/health/live` for container health checks.
 
 **Docker port difference:** `dotnet run` binds to port 5255; the Docker image binds to 8080 (`ASPNETCORE_URLS=http://+:8080`). The Vite dev proxy targets 5255, Nginx targets 8080.
 

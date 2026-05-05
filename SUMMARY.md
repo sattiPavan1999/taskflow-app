@@ -8,7 +8,7 @@
 |-----------|------------|---------|
 | Language | C# | latest |
 | Framework | .NET / ASP.NET Core | 8.0 |
-| Database | SQLite | — |
+| Database | PostgreSQL | 16 |
 | ORM | Entity Framework Core | 8.0.10 |
 | Authentication | JWT Bearer + BCrypt | 8.0.10 / 4.0.3 |
 | Testing | xUnit + Moq | 2.9.3 / 4.20.72 |
@@ -18,7 +18,7 @@
 
 ## Architecture
 
-**Backend — Controller → Service → Repository → EF Core → SQLite**
+**Backend — Controller → Service → Repository → EF Core → PostgreSQL**
 
 - Controllers: no business logic; all task endpoints protected by `[Authorize]`
 - Services: business logic, status-filter validation, exception throwing
@@ -73,8 +73,8 @@
 
 ## Key Decisions
 
-- **`int` primary keys** — `TaskItem.Id` and `User.Id` are auto-increment integers (EF Core `AUTOINCREMENT` on SQLite). Previously `Guid`.
+- **`int` primary keys** — `TaskItem.Id` and `User.Id` are auto-increment integers (PostgreSQL `IDENTITY` columns via Npgsql). Previously `Guid`.
 - **Per-user isolation** — `TaskItem.UserId` foreign key with cascade delete; service layer always passes `userId` from JWT claims down to the repository.
 - **Timing-safe login** — `AuthService.LoginAsync` always runs `BCrypt.Verify` (even for unknown emails) to prevent user-enumeration via timing.
-- **Single migration** — Migrations directory contains one `InitialCreate` covering both `Users` and `Tasks` tables.
+- **Single migration** — Migrations directory contains one `InitialCreate` covering both `Users` and `Tasks` tables with PostgreSQL-native types (`integer`, `text`, `timestamp with time zone`, `boolean`).
 - **No controller interfaces** — interfaces exist at the service and repository layers only; controller tests instantiate the concrete class directly.
