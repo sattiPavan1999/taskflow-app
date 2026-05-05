@@ -9,7 +9,7 @@ vi.mock('../api/taskApi');
 
 const MOCK_TASKS: Task[] = [
   {
-    id: '1',
+    id: 1,
     title: 'Active task',
     isCompleted: false,
     createdAt: '2026-04-01T00:00:00Z',
@@ -18,7 +18,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: null,
   },
   {
-    id: '2',
+    id: 2,
     title: 'Done task',
     isCompleted: true,
     createdAt: '2026-04-02T00:00:00Z',
@@ -27,7 +27,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: null,
   },
   {
-    id: '3',
+    id: 3,
     title: 'Overdue task',
     isCompleted: false,
     createdAt: '2026-04-01T00:00:00Z',
@@ -41,7 +41,7 @@ beforeEach(() => {
   localStorage.setItem('auth_token', 'fake-test-token');
   (taskApi.getAll as Mock).mockResolvedValue(MOCK_TASKS);
   (taskApi.create as Mock).mockResolvedValue({
-    id: '4',
+    id: 4,
     title: 'New task',
     isCompleted: false,
     createdAt: new Date().toISOString(),
@@ -134,7 +134,7 @@ describe('App — completing a task', () => {
     await userEvent.click(checkboxes[0]);
 
     await waitFor(() => expect(taskApi.update).toHaveBeenCalledWith(
-      '1',
+      1,
       expect.objectContaining({ isCompleted: true })
     ));
   });
@@ -167,7 +167,7 @@ describe('App — clearing completed', () => {
     await userEvent.click(screen.getByRole('button', { name: /clear completed/i }));
 
     await waitFor(() => {
-      expect(taskApi.delete).toHaveBeenCalledWith('2');
+      expect(taskApi.delete).toHaveBeenCalledWith(2);
       expect(screen.queryByText('Done task')).not.toBeInTheDocument();
     });
   });

@@ -4,7 +4,7 @@ import TodoItem from '../components/TodoItem';
 import type { Task } from '../types/task';
 
 const BASE_TASK: Task = {
-  id: '1',
+  id: 1,
   title: 'Write tests',
   isCompleted: false,
   createdAt: '2026-04-01T00:00:00Z',

@@ -54,3 +54,4 @@ coverage/
 # Local environment secrets
 .env
 TaskApi/appsettings.Development.json
+.playwright-mcp
