@@ -15,12 +15,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Configure SQLite database
+// Configure PostgreSQL database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Data Source=taskflow.db";
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseNpgsql(connectionString));
 
 // Register repositories and services
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
