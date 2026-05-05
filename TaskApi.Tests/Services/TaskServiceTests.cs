@@ -15,7 +15,7 @@ public class TaskServiceTests
     private TaskService CreateService() => new(_repo.Object, _logger.Object);
 
     private static TaskItem MakeTask(string title = "Test", bool completed = false, string priority = "medium", DateTime? dueDate = null) =>
-        new() { Id = Guid.NewGuid(), UserId = 1, Title = title, IsCompleted = completed, Priority = priority, DueDate = dueDate, CreatedAt = DateTime.UtcNow };
+        new() { UserId = 1, Title = title, IsCompleted = completed, Priority = priority, DueDate = dueDate, CreatedAt = DateTime.UtcNow };
 
     // ── GetTasksAsync ──────────────────────────────────────────────
 
@@ -90,9 +90,9 @@ public class TaskServiceTests
     [Fact]
     public async Task GetTaskByIdAsync_ThrowsNotFoundException_WhenNotFound()
     {
-        _repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<int>())).ReturnsAsync((TaskItem?)null);
+        _repo.Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync((TaskItem?)null);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => CreateService().GetTaskByIdAsync(1, Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => CreateService().GetTaskByIdAsync(1, 99));
     }
 
     // ── CreateTaskAsync ────────────────────────────────────────────
@@ -109,7 +109,6 @@ public class TaskServiceTests
         Assert.Equal("high", result.Priority);
         Assert.Equal("Work", result.Category);
         Assert.False(result.IsCompleted);
-        Assert.NotEqual(Guid.Empty, result.Id);
         _repo.Verify(r => r.AddAsync(It.IsAny<TaskItem>()), Times.Once);
     }
 
@@ -134,10 +133,10 @@ public class TaskServiceTests
     [Fact]
     public async Task UpdateTaskAsync_ThrowsNotFoundException_WhenNotFound()
     {
-        _repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<int>())).ReturnsAsync((TaskItem?)null);
+        _repo.Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync((TaskItem?)null);
         var dto = new UpdateTaskDto { Title = "X", IsCompleted = false, Priority = "medium" };
 
-        await Assert.ThrowsAsync<NotFoundException>(() => CreateService().UpdateTaskAsync(1, Guid.NewGuid(), dto));
+        await Assert.ThrowsAsync<NotFoundException>(() => CreateService().UpdateTaskAsync(1, 99, dto));
     }
 
     // ── DeleteTaskAsync ────────────────────────────────────────────
@@ -157,8 +156,8 @@ public class TaskServiceTests
     [Fact]
     public async Task DeleteTaskAsync_ThrowsNotFoundException_WhenNotFound()
     {
-        _repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<int>())).ReturnsAsync((TaskItem?)null);
+        _repo.Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync((TaskItem?)null);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => CreateService().DeleteTaskAsync(1, Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => CreateService().DeleteTaskAsync(1, 99));
     }
 }

@@ -11,8 +11,8 @@ using TaskApi.Models;
 namespace TaskApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260505093229_AddUserAndUserIdToTask")]
-    partial class AddUserAndUserIdToTask
+    [Migration("20260505101547_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -22,9 +22,9 @@ namespace TaskApi.Migrations
 
             modelBuilder.Entity("TaskApi.Models.TaskItem", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Category")
                         .HasColumnType("TEXT");

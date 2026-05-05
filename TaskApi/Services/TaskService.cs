@@ -48,7 +48,7 @@ public class TaskService : ITaskService
         return tasks.Select(MapToResponseDto);
     }
 
-    public async Task<TaskResponseDto> GetTaskByIdAsync(int userId, Guid id)
+    public async Task<TaskResponseDto> GetTaskByIdAsync(int userId, int id)
     {
         _logger.LogInformation("Fetching task by ID: {TaskId}", id);
 
@@ -67,7 +67,6 @@ public class TaskService : ITaskService
 
         var task = new TaskItem
         {
-            Id = Guid.NewGuid(),
             UserId = userId,
             Title = createDto.Title,
             Description = createDto.Description,
@@ -82,7 +81,7 @@ public class TaskService : ITaskService
         return MapToResponseDto(createdTask);
     }
 
-    public async Task<TaskResponseDto> UpdateTaskAsync(int userId, Guid id, UpdateTaskDto updateDto)
+    public async Task<TaskResponseDto> UpdateTaskAsync(int userId, int id, UpdateTaskDto updateDto)
     {
         _logger.LogInformation("Updating task with ID: {TaskId}", id);
 
@@ -103,7 +102,7 @@ public class TaskService : ITaskService
         return MapToResponseDto(updatedTask);
     }
 
-    public async Task DeleteTaskAsync(int userId, Guid id)
+    public async Task DeleteTaskAsync(int userId, int id)
     {
         _logger.LogInformation("Deleting task with ID: {TaskId}", id);
 

@@ -28,8 +28,9 @@ public class TasksControllerTests
         return controller;
     }
 
+    private static int _nextId = 1;
     private static TaskResponseDto MakeResponse(string title = "Test", bool completed = false) =>
-        new() { Id = Guid.NewGuid(), Title = title, IsCompleted = completed, Priority = "medium", CreatedAt = DateTime.UtcNow };
+        new() { Id = _nextId++, Title = title, IsCompleted = completed, Priority = "medium", CreatedAt = DateTime.UtcNow };
 
     // ── GET /api/tasks ─────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ public class TasksControllerTests
     [Fact]
     public async Task UpdateTask_Returns200_WithUpdatedTask()
     {
-        var id = Guid.NewGuid();
+        var id = 1;
         var dto = new UpdateTaskDto { Title = "Updated", IsCompleted = true, Priority = "low" };
         var updated = MakeResponse("Updated", completed: true);
         _service.Setup(s => s.UpdateTaskAsync(It.IsAny<int>(), id, dto)).ReturnsAsync(updated);
@@ -123,7 +124,7 @@ public class TasksControllerTests
     [Fact]
     public async Task DeleteTask_Returns204_NoContent()
     {
-        var id = Guid.NewGuid();
+        var id = 1;
         _service.Setup(s => s.DeleteTaskAsync(It.IsAny<int>(), id)).Returns(Task.CompletedTask);
 
         var result = await CreateController().DeleteTask(id);

@@ -32,7 +32,7 @@ public class TaskRepository : ITaskRepository
             .ToListAsync();
     }
 
-    public async Task<TaskItem?> GetByIdAsync(Guid id, int userId)
+    public async Task<TaskItem?> GetByIdAsync(int id, int userId)
     {
         _logger.LogInformation("Retrieving task {TaskId} for user {UserId}", id, userId);
         return await _context.Tasks
@@ -57,7 +57,7 @@ public class TaskRepository : ITaskRepository
         return task;
     }
 
-    public async Task DeleteAsync(Guid id, int userId)
+    public async Task DeleteAsync(int id, int userId)
     {
         _logger.LogInformation("Deleting task {TaskId} for user {UserId}", id, userId);
         var task = await _context.Tasks

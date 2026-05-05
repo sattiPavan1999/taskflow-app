@@ -26,7 +26,7 @@ public class TaskRepositoryTests : IDisposable
     public void Dispose() => _context.Dispose();
 
     private static TaskItem MakeTask(string title = "Test", bool completed = false, int userId = UserId) =>
-        new() { Id = Guid.NewGuid(), UserId = userId, Title = title, IsCompleted = completed, Priority = "medium", CreatedAt = DateTime.UtcNow };
+        new() { UserId = userId, Title = title, IsCompleted = completed, Priority = "medium", CreatedAt = DateTime.UtcNow };
 
     // ── GetAllAsync ────────────────────────────────────────────────
 
@@ -95,7 +95,7 @@ public class TaskRepositoryTests : IDisposable
     [Fact]
     public async Task GetByIdAsync_ReturnsNull_WhenNotFound()
     {
-        var result = await _repo.GetByIdAsync(Guid.NewGuid(), UserId);
+        var result = await _repo.GetByIdAsync(999, UserId);
 
         Assert.Null(result);
     }
@@ -159,7 +159,7 @@ public class TaskRepositoryTests : IDisposable
     [Fact]
     public async Task DeleteAsync_DoesNotThrow_WhenTaskDoesNotExist()
     {
-        var exception = await Record.ExceptionAsync(() => _repo.DeleteAsync(Guid.NewGuid(), UserId));
+        var exception = await Record.ExceptionAsync(() => _repo.DeleteAsync(999, UserId));
 
         Assert.Null(exception);
     }

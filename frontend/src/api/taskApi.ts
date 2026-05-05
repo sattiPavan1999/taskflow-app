@@ -33,7 +33,7 @@ export const taskApi = {
   getAll: () => request<Task[]>('/tasks'),
   create: (payload: CreateTaskPayload) =>
     request<Task>('/tasks', { method: 'POST', body: JSON.stringify(payload) }),
-  update: (id: string, payload: UpdateTaskPayload) =>
+  update: (id: number, payload: UpdateTaskPayload) =>
     request<Task>(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
-  delete: (id: string) => request<void>(`/tasks/${id}`, { method: 'DELETE' }),
+  delete: (id: number) => request<void>(`/tasks/${id}`, { method: 'DELETE' }),
 };

@@ -8,7 +8,7 @@ public class TaskItem
     /// <summary>
     /// Unique identifier for the task
     /// </summary>
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>
     /// Title of the task (required)

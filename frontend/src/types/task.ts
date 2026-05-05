@@ -2,7 +2,7 @@ export type Priority = 'low' | 'medium' | 'high';
 export type TabFilter = 'all' | 'active' | 'completed' | 'overdue';
 
 export interface Task {
-  id: string;
+  id: number;
   title: string;
   description?: string | null;
   isCompleted: boolean;

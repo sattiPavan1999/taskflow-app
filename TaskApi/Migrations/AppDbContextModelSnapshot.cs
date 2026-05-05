@@ -19,9 +19,9 @@ namespace TaskApi.Migrations
 
             modelBuilder.Entity("TaskApi.Models.TaskItem", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Category")
                         .HasColumnType("TEXT");
