@@ -3,9 +3,6 @@ using TaskApi.Models;
 
 namespace TaskApi.Repositories;
 
-/// <summary>
-/// Repository implementation for task data access operations
-/// </summary>
 public class TaskRepository : ITaskRepository
 {
     private readonly AppDbContext _context;
@@ -17,25 +14,29 @@ public class TaskRepository : ITaskRepository
         _logger = logger;
     }
 
-    public async Task<IEnumerable<TaskItem>> GetAllAsync()
+    public async Task<IEnumerable<TaskItem>> GetAllAsync(int userId)
     {
-        _logger.LogInformation("Retrieving all tasks from database");
-        return await _context.Tasks.OrderBy(t => t.CreatedAt).ToListAsync();
-    }
-
-    public async Task<IEnumerable<TaskItem>> GetByStatusAsync(bool isCompleted)
-    {
-        _logger.LogInformation("Retrieving tasks with completion status: {IsCompleted}", isCompleted);
+        _logger.LogInformation("Retrieving all tasks for user {UserId}", userId);
         return await _context.Tasks
-            .Where(t => t.IsCompleted == isCompleted)
+            .Where(t => t.UserId == userId)
             .OrderBy(t => t.CreatedAt)
             .ToListAsync();
     }
 
-    public async Task<TaskItem?> GetByIdAsync(Guid id)
+    public async Task<IEnumerable<TaskItem>> GetByStatusAsync(bool isCompleted, int userId)
     {
-        _logger.LogInformation("Retrieving task with ID: {TaskId}", id);
-        return await _context.Tasks.FindAsync(id);
+        _logger.LogInformation("Retrieving tasks with status {IsCompleted} for user {UserId}", isCompleted, userId);
+        return await _context.Tasks
+            .Where(t => t.IsCompleted == isCompleted && t.UserId == userId)
+            .OrderBy(t => t.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<TaskItem?> GetByIdAsync(Guid id, int userId)
+    {
+        _logger.LogInformation("Retrieving task {TaskId} for user {UserId}", id, userId);
+        return await _context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
     }
 
     public async Task<TaskItem> AddAsync(TaskItem task)
@@ -56,10 +57,11 @@ public class TaskRepository : ITaskRepository
         return task;
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(Guid id, int userId)
     {
-        _logger.LogInformation("Deleting task with ID: {TaskId}", id);
-        var task = await _context.Tasks.FindAsync(id);
+        _logger.LogInformation("Deleting task {TaskId} for user {UserId}", id, userId);
+        var task = await _context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
         if (task != null)
         {
             _context.Tasks.Remove(task);

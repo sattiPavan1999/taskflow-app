@@ -15,10 +15,19 @@ public class AppDbContext : DbContext
     /// Tasks table
     /// </summary>
     public DbSet<TaskItem> Tasks { get; set; } = null!;
+    public DbSet<User> Users { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(256);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.PasswordHash).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+        });
 
         modelBuilder.Entity<TaskItem>(entity =>
         {
@@ -27,6 +36,10 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.IsCompleted).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

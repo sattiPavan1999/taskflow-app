@@ -5,9 +5,6 @@ using TaskApi.Repositories;
 
 namespace TaskApi.Services;
 
-/// <summary>
-/// Service implementation for task business logic operations
-/// </summary>
 public class TaskService : ITaskService
 {
     private readonly ITaskRepository _repository;
@@ -19,7 +16,7 @@ public class TaskService : ITaskService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<TaskResponseDto>> GetTasksAsync(string? status = "all")
+    public async Task<IEnumerable<TaskResponseDto>> GetTasksAsync(int userId, string? status = "all")
     {
         _logger.LogInformation("Fetching tasks with status filter: {Status}", status ?? "all");
 
@@ -34,28 +31,28 @@ public class TaskService : ITaskService
 
         if (normalizedStatus == "all")
         {
-            tasks = await _repository.GetAllAsync();
+            tasks = await _repository.GetAllAsync(userId);
         }
         else if (normalizedStatus == "overdue")
         {
             var now = DateTime.UtcNow;
-            tasks = (await _repository.GetAllAsync())
+            tasks = (await _repository.GetAllAsync(userId))
                 .Where(t => !t.IsCompleted && t.DueDate.HasValue && t.DueDate.Value < now);
         }
         else
         {
             var isCompleted = normalizedStatus == "completed";
-            tasks = await _repository.GetByStatusAsync(isCompleted);
+            tasks = await _repository.GetByStatusAsync(isCompleted, userId);
         }
 
         return tasks.Select(MapToResponseDto);
     }
 
-    public async Task<TaskResponseDto> GetTaskByIdAsync(Guid id)
+    public async Task<TaskResponseDto> GetTaskByIdAsync(int userId, Guid id)
     {
         _logger.LogInformation("Fetching task by ID: {TaskId}", id);
 
-        var task = await _repository.GetByIdAsync(id);
+        var task = await _repository.GetByIdAsync(id, userId);
         if (task == null)
         {
             throw new NotFoundException($"Task with ID {id} not found");
@@ -64,13 +61,14 @@ public class TaskService : ITaskService
         return MapToResponseDto(task);
     }
 
-    public async Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto createDto)
+    public async Task<TaskResponseDto> CreateTaskAsync(int userId, CreateTaskDto createDto)
     {
         _logger.LogInformation("Creating new task with title: {Title}", createDto.Title);
 
         var task = new TaskItem
         {
             Id = Guid.NewGuid(),
+            UserId = userId,
             Title = createDto.Title,
             Description = createDto.Description,
             IsCompleted = false,
@@ -84,11 +82,11 @@ public class TaskService : ITaskService
         return MapToResponseDto(createdTask);
     }
 
-    public async Task<TaskResponseDto> UpdateTaskAsync(Guid id, UpdateTaskDto updateDto)
+    public async Task<TaskResponseDto> UpdateTaskAsync(int userId, Guid id, UpdateTaskDto updateDto)
     {
         _logger.LogInformation("Updating task with ID: {TaskId}", id);
 
-        var existingTask = await _repository.GetByIdAsync(id);
+        var existingTask = await _repository.GetByIdAsync(id, userId);
         if (existingTask == null)
         {
             throw new NotFoundException($"Task with ID {id} not found");
@@ -105,17 +103,17 @@ public class TaskService : ITaskService
         return MapToResponseDto(updatedTask);
     }
 
-    public async Task DeleteTaskAsync(Guid id)
+    public async Task DeleteTaskAsync(int userId, Guid id)
     {
         _logger.LogInformation("Deleting task with ID: {TaskId}", id);
 
-        var task = await _repository.GetByIdAsync(id);
+        var task = await _repository.GetByIdAsync(id, userId);
         if (task == null)
         {
             throw new NotFoundException($"Task with ID {id} not found");
         }
 
-        await _repository.DeleteAsync(id);
+        await _repository.DeleteAsync(id, userId);
     }
 
     private static TaskResponseDto MapToResponseDto(TaskItem task)

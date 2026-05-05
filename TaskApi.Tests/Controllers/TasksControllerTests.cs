@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,7 +13,20 @@ public class TasksControllerTests
 {
     private readonly Mock<ITaskService> _service = new();
     private readonly Mock<ILogger<TasksController>> _logger = new();
-    private TasksController CreateController() => new(_service.Object, _logger.Object);
+
+    private TasksController CreateController()
+    {
+        var controller = new TasksController(_service.Object, _logger.Object);
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, "1") };
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"))
+            }
+        };
+        return controller;
+    }
 
     private static TaskResponseDto MakeResponse(string title = "Test", bool completed = false) =>
         new() { Id = Guid.NewGuid(), Title = title, IsCompleted = completed, Priority = "medium", CreatedAt = DateTime.UtcNow };
@@ -22,7 +37,7 @@ public class TasksControllerTests
     public async Task GetTasks_Returns200_WithTaskList()
     {
         var tasks = new List<TaskResponseDto> { MakeResponse("A"), MakeResponse("B") };
-        _service.Setup(s => s.GetTasksAsync("all")).ReturnsAsync(tasks);
+        _service.Setup(s => s.GetTasksAsync(It.IsAny<int>(), "all")).ReturnsAsync(tasks);
 
         var result = await CreateController().GetTasks("all");
 
@@ -34,11 +49,11 @@ public class TasksControllerTests
     [Fact]
     public async Task GetTasks_PassesStatusFilterToService()
     {
-        _service.Setup(s => s.GetTasksAsync("active")).ReturnsAsync(new List<TaskResponseDto>());
+        _service.Setup(s => s.GetTasksAsync(It.IsAny<int>(), "active")).ReturnsAsync(new List<TaskResponseDto>());
 
         await CreateController().GetTasks("active");
 
-        _service.Verify(s => s.GetTasksAsync("active"), Times.Once);
+        _service.Verify(s => s.GetTasksAsync(It.IsAny<int>(), "active"), Times.Once);
     }
 
     // ── GET /api/tasks/{id} ────────────────────────────────────────
@@ -47,7 +62,7 @@ public class TasksControllerTests
     public async Task GetTask_Returns200_WithTask()
     {
         var task = MakeResponse("My Task");
-        _service.Setup(s => s.GetTaskByIdAsync(task.Id)).ReturnsAsync(task);
+        _service.Setup(s => s.GetTaskByIdAsync(It.IsAny<int>(), task.Id)).ReturnsAsync(task);
 
         var result = await CreateController().GetTask(task.Id);
 
@@ -63,7 +78,7 @@ public class TasksControllerTests
     {
         var dto = new CreateTaskDto { Title = "New Task", Priority = "high", Category = "Work" };
         var created = MakeResponse("New Task");
-        _service.Setup(s => s.CreateTaskAsync(dto)).ReturnsAsync(created);
+        _service.Setup(s => s.CreateTaskAsync(It.IsAny<int>(), dto)).ReturnsAsync(created);
 
         var result = await CreateController().CreateTask(dto);
 
@@ -78,7 +93,7 @@ public class TasksControllerTests
     {
         var dto = new CreateTaskDto { Title = "Task", Priority = "medium" };
         var created = MakeResponse();
-        _service.Setup(s => s.CreateTaskAsync(dto)).ReturnsAsync(created);
+        _service.Setup(s => s.CreateTaskAsync(It.IsAny<int>(), dto)).ReturnsAsync(created);
 
         var result = await CreateController().CreateTask(dto);
 
@@ -94,7 +109,7 @@ public class TasksControllerTests
         var id = Guid.NewGuid();
         var dto = new UpdateTaskDto { Title = "Updated", IsCompleted = true, Priority = "low" };
         var updated = MakeResponse("Updated", completed: true);
-        _service.Setup(s => s.UpdateTaskAsync(id, dto)).ReturnsAsync(updated);
+        _service.Setup(s => s.UpdateTaskAsync(It.IsAny<int>(), id, dto)).ReturnsAsync(updated);
 
         var result = await CreateController().UpdateTask(id, dto);
 
@@ -109,11 +124,11 @@ public class TasksControllerTests
     public async Task DeleteTask_Returns204_NoContent()
     {
         var id = Guid.NewGuid();
-        _service.Setup(s => s.DeleteTaskAsync(id)).Returns(Task.CompletedTask);
+        _service.Setup(s => s.DeleteTaskAsync(It.IsAny<int>(), id)).Returns(Task.CompletedTask);
 
         var result = await CreateController().DeleteTask(id);
 
         Assert.IsType<NoContentResult>(result);
-        _service.Verify(s => s.DeleteTaskAsync(id), Times.Once);
+        _service.Verify(s => s.DeleteTaskAsync(It.IsAny<int>(), id), Times.Once);
     }
 }

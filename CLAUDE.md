@@ -55,7 +55,19 @@ Three-layer: **Controller → Service → Repository → EF Core → SQLite**
 
 **Valid `status` filter values:** `all`, `active`, `completed`, `overdue`. The `overdue` filter is applied in-memory in the service (tasks where `IsCompleted=false` and `DueDate < UtcNow`).
 
-**Database:** SQLite file `TaskApi/taskflow.db`, created via `EnsureCreated()` on startup — there are **no EF migrations**. When adding new columns to `TaskItem`, delete `taskflow.db` so it recreates with the updated schema.
+**Database:** SQLite file `TaskApi/taskflow.db`. EF Core migrations live in `TaskApi/Migrations/`. The app calls `Database.Migrate()` on startup to apply any pending migrations automatically.
+
+**Migration workflow:**
+```bash
+# Add a new migration after changing the model
+dotnet ef migrations add <MigrationName> --project TaskApi/TaskApi.csproj
+
+# Apply migrations manually (also runs automatically on startup)
+dotnet ef database update --project TaskApi/TaskApi.csproj
+
+# Remove the last unapplied migration
+dotnet ef migrations remove --project TaskApi/TaskApi.csproj
+```
 
 **Error responses** always use `ErrorResponseDto`: `{ errorCode, message, timestamp, traceId, validationErrors? }`.
 

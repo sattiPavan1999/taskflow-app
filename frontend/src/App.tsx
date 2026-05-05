@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { taskApi } from './api/taskApi';
 import type { Task, Priority, TabFilter } from './types/task';
 import Header from './components/Header';
@@ -8,11 +9,15 @@ import TabBar from './components/TabBar';
 import TodoItem from './components/TodoItem';
 import EmptyState from './components/EmptyState';
 import ToastContainer, { type ToastItem } from './components/ToastContainer';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import './App.css';
 
 let toastCounter = 0;
 
-export default function App() {
+function TaskApp() {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
@@ -33,6 +38,11 @@ export default function App() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    navigate('/login');
+  };
 
   const isOverdue = (task: Task) =>
     !task.isCompleted && !!task.dueDate && new Date(task.dueDate) < new Date();
@@ -141,11 +151,25 @@ export default function App() {
                 <span className="items-left">
                   {itemsLeft} {itemsLeft === 1 ? 'item' : 'items'} left
                 </span>
-                {counts.completed > 0 && (
-                  <button className="clear-completed" onClick={handleClearCompleted}>
-                    Clear completed
+                <div className="footer-actions">
+                  {counts.completed > 0 && (
+                    <button className="clear-completed" onClick={handleClearCompleted}>
+                      Clear completed
+                    </button>
+                  )}
+                  <button className="logout-btn" onClick={handleLogout}>
+                    Log out
                   </button>
-                )}
+                </div>
+              </div>
+            )}
+
+            {tasks.length === 0 && !loading && (
+              <div className="card-footer">
+                <span />
+                <button className="logout-btn" onClick={handleLogout}>
+                  Log out
+                </button>
               </div>
             )}
           </div>
@@ -154,5 +178,24 @@ export default function App() {
         <ToastContainer toasts={toasts} />
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <TaskApp />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }

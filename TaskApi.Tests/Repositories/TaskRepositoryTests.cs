@@ -8,6 +8,9 @@ namespace TaskApi.Tests.Repositories;
 
 public class TaskRepositoryTests : IDisposable
 {
+    private const int UserId = 1;
+    private const int OtherUserId = 2;
+
     private readonly AppDbContext _context;
     private readonly TaskRepository _repo;
 
@@ -22,18 +25,18 @@ public class TaskRepositoryTests : IDisposable
 
     public void Dispose() => _context.Dispose();
 
-    private static TaskItem MakeTask(string title = "Test", bool completed = false) =>
-        new() { Id = Guid.NewGuid(), Title = title, IsCompleted = completed, Priority = "medium", CreatedAt = DateTime.UtcNow };
+    private static TaskItem MakeTask(string title = "Test", bool completed = false, int userId = UserId) =>
+        new() { Id = Guid.NewGuid(), UserId = userId, Title = title, IsCompleted = completed, Priority = "medium", CreatedAt = DateTime.UtcNow };
 
     // ── GetAllAsync ────────────────────────────────────────────────
 
     [Fact]
-    public async Task GetAllAsync_ReturnsAllTasks()
+    public async Task GetAllAsync_ReturnsAllTasksForUser()
     {
         await _repo.AddAsync(MakeTask("A"));
         await _repo.AddAsync(MakeTask("B"));
 
-        var result = await _repo.GetAllAsync();
+        var result = await _repo.GetAllAsync(UserId);
 
         Assert.Equal(2, result.Count());
     }
@@ -41,9 +44,21 @@ public class TaskRepositoryTests : IDisposable
     [Fact]
     public async Task GetAllAsync_ReturnsEmpty_WhenNoTasks()
     {
-        var result = await _repo.GetAllAsync();
+        var result = await _repo.GetAllAsync(UserId);
 
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_DoesNotReturnOtherUsersTasks()
+    {
+        await _repo.AddAsync(MakeTask("Mine"));
+        await _repo.AddAsync(MakeTask("Theirs", userId: OtherUserId));
+
+        var result = await _repo.GetAllAsync(UserId);
+
+        Assert.Single(result);
+        Assert.Equal("Mine", result.First().Title);
     }
 
     // ── GetByStatusAsync ───────────────────────────────────────────
@@ -54,8 +69,8 @@ public class TaskRepositoryTests : IDisposable
         await _repo.AddAsync(MakeTask("Active", completed: false));
         await _repo.AddAsync(MakeTask("Done", completed: true));
 
-        var active = await _repo.GetByStatusAsync(false);
-        var completed = await _repo.GetByStatusAsync(true);
+        var active = await _repo.GetByStatusAsync(false, UserId);
+        var completed = await _repo.GetByStatusAsync(true, UserId);
 
         Assert.Single(active);
         Assert.Equal("Active", active.First().Title);
@@ -71,7 +86,7 @@ public class TaskRepositoryTests : IDisposable
         var task = MakeTask("Find Me");
         await _repo.AddAsync(task);
 
-        var result = await _repo.GetByIdAsync(task.Id);
+        var result = await _repo.GetByIdAsync(task.Id, UserId);
 
         Assert.NotNull(result);
         Assert.Equal(task.Id, result.Id);
@@ -80,7 +95,18 @@ public class TaskRepositoryTests : IDisposable
     [Fact]
     public async Task GetByIdAsync_ReturnsNull_WhenNotFound()
     {
-        var result = await _repo.GetByIdAsync(Guid.NewGuid());
+        var result = await _repo.GetByIdAsync(Guid.NewGuid(), UserId);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ReturnsNull_WhenTaskBelongsToOtherUser()
+    {
+        var task = MakeTask("Theirs", userId: OtherUserId);
+        await _repo.AddAsync(task);
+
+        var result = await _repo.GetByIdAsync(task.Id, UserId);
 
         Assert.Null(result);
     }
@@ -94,7 +120,7 @@ public class TaskRepositoryTests : IDisposable
 
         await _repo.AddAsync(task);
 
-        var saved = await _repo.GetByIdAsync(task.Id);
+        var saved = await _repo.GetByIdAsync(task.Id, UserId);
         Assert.NotNull(saved);
         Assert.Equal("New Task", saved.Title);
     }
@@ -111,7 +137,7 @@ public class TaskRepositoryTests : IDisposable
         task.IsCompleted = true;
         await _repo.UpdateAsync(task);
 
-        var saved = await _repo.GetByIdAsync(task.Id);
+        var saved = await _repo.GetByIdAsync(task.Id, UserId);
         Assert.Equal("Updated", saved!.Title);
         Assert.True(saved.IsCompleted);
     }
@@ -124,16 +150,16 @@ public class TaskRepositoryTests : IDisposable
         var task = MakeTask("To Delete");
         await _repo.AddAsync(task);
 
-        await _repo.DeleteAsync(task.Id);
+        await _repo.DeleteAsync(task.Id, UserId);
 
-        var result = await _repo.GetByIdAsync(task.Id);
+        var result = await _repo.GetByIdAsync(task.Id, UserId);
         Assert.Null(result);
     }
 
     [Fact]
     public async Task DeleteAsync_DoesNotThrow_WhenTaskDoesNotExist()
     {
-        var exception = await Record.ExceptionAsync(() => _repo.DeleteAsync(Guid.NewGuid()));
+        var exception = await Record.ExceptionAsync(() => _repo.DeleteAsync(Guid.NewGuid(), UserId));
 
         Assert.Null(exception);
     }

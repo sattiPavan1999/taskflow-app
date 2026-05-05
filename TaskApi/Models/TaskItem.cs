@@ -33,4 +33,6 @@ public class TaskItem
     public string Priority { get; set; } = "medium";
     public string? Category { get; set; }
     public DateTime? DueDate { get; set; }
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
 }

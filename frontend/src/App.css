@@ -54,7 +54,7 @@ input, select { font: inherit; }
 }
 
 .container {
-  max-width: 784px;
+  max-width: 960px;
   margin: 0 auto;
 }
 
@@ -122,6 +122,7 @@ input, select { font: inherit; }
   border-radius: 16px;
   box-shadow: var(--card-shadow);
   overflow: visible;
+  min-height: 560px;
   transition: background 0.2s, box-shadow 0.2s;
 }
 
@@ -534,4 +535,97 @@ input, select { font: inherit; }
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Auth pages ──────────────────────────────────────────── */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8ecf8;
+}
+
+.auth-form {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-form h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.auth-form input {
+  padding: 12px 14px;
+  border: 1.5px solid #c4c8d4;
+  border-radius: 10px;
+  font-size: 14px;
+  background: #f4f5f7;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.auth-form input:focus { border-color: #4361ee; }
+
+.auth-form button[type="submit"] {
+  padding: 12px;
+  background: #4361ee;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.auth-form button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.auth-error {
+  margin: 0;
+  color: #e74c3c;
+  font-size: 13px;
+}
+
+.auth-switch {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.auth-switch a { color: #4361ee; text-decoration: none; font-weight: 500; }
+
+/* ── Logout button ───────────────────────────────────────── */
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logout-btn {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.logout-btn:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
 }

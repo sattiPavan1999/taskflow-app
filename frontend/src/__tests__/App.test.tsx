@@ -38,6 +38,7 @@ const MOCK_TASKS: Task[] = [
 ];
 
 beforeEach(() => {
+  localStorage.setItem('auth_token', 'fake-test-token');
   (taskApi.getAll as Mock).mockResolvedValue(MOCK_TASKS);
   (taskApi.create as Mock).mockResolvedValue({
     id: '4',
@@ -54,7 +55,10 @@ beforeEach(() => {
   (taskApi.delete as Mock).mockResolvedValue(undefined);
 });
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  localStorage.removeItem('auth_token');
+});
 
 describe('App — initial load', () => {
   it('shows all tasks after loading', async () => {
