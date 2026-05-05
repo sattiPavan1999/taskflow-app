@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow Rules
+
+**Always ask for explicit permission before running `git commit` or `git push`.** Stage files and show the proposed commit message, then wait for the user to confirm before proceeding.
+
 ## Commands
 
 ### Backend (ASP.NET Core)
